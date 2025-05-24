@@ -9,8 +9,6 @@ import { ContactService } from '../../contact.service';
   styleUrl: './contact-list.component.css'
 })
 export class ContactListComponent {
-  @Output() selectedContactEvent = new EventEmitter<Contact>();
-
   contacts: Contact[] = [];
 
   constructor(private contactService: ContactService) {}
@@ -20,6 +18,6 @@ export class ContactListComponent {
   }
 
   onSelected(contact: Contact): void {
-    this.selectedContactEvent.emit(contact);
+    this.contactService.contactSelectedEvent.emit(contact);
   }
 }
