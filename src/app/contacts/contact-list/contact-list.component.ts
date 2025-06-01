@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Contact } from '../contact.model';
 import { ContactService } from '../../contact.service';
 
@@ -8,16 +8,18 @@ import { ContactService } from '../../contact.service';
   templateUrl: './contact-list.component.html',
   styleUrl: './contact-list.component.css'
 })
-export class ContactListComponent {
+export class ContactListComponent implements OnInit {
   contacts: Contact[] = [];
 
   constructor(private contactService: ContactService) {}
 
   ngOnInit(): void {
     this.contacts = this.contactService.getContacts();
-  }
 
-  onSelected(contact: Contact): void {
-    this.contactService.contactSelectedEvent.emit(contact);
+    this.contactService.contactChangedEvent.subscribe(
+      (contacts: Contact[]) => {
+        this.contacts = contacts;
+      }
+    );
   }
 }
