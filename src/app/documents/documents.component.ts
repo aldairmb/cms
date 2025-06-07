@@ -1,7 +1,4 @@
 import { Component } from '@angular/core';
-import { Document } from '../document.model';
-import { DocumentService } from '../document.service';
-
 
 @Component({
   selector: 'app-documents',
@@ -9,16 +6,4 @@ import { DocumentService } from '../document.service';
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.css'
 })
-export class DocumentsComponent {
-
-  selectedDocument: Document;
-
-  constructor(private documentService: DocumentService) {}
-
-  ngOnInit(): void {
-    this.documentService.documentSelectedEvent.subscribe((document: Document) => {
-      this.selectedDocument = document;
-    });
-  }
-
-}
+export class DocumentsComponent {}

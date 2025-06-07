@@ -1,6 +1,4 @@
-import { Component, OnInit } from '@angular/core';
-import { Contact } from './contact.model';
-import { ContactService } from '../contact.service';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-contacts',
@@ -8,16 +6,4 @@ import { ContactService } from '../contact.service';
   templateUrl: './contacts.component.html',
   styleUrl: './contacts.component.css'
 })
-export class ContactsComponent implements OnInit {
-  selectedContact: Contact;
-
-  constructor(private contactService: ContactService) {}
-
-  ngOnInit(): void {
-    this.contactService.contactSelectedEvent.subscribe((contact: Contact) => {
-      this.selectedContact = contact;
-    });
-  }
-
-
-}
+export class ContactsComponent {}
