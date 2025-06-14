@@ -53,7 +53,7 @@ export class DocumentService {
   updateDocument(originalDocument: Document, newDocument: Document) {
     if (!originalDocument || !newDocument) return;
 
-    const pos = this.documents.indexOf(originalDocument);
+    const pos = this.documents.findIndex(d => d.id === originalDocument.id);
     if (pos < 0) return;
 
     newDocument.id = originalDocument.id;

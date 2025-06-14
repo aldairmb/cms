@@ -1,1 +1,38 @@
-<p>contact-edit works!</p>
+<div class="panel panel-default">
+  <div class="panel-body">
+    <form id="contact-edit" #f="ngForm" (ngSubmit)="onSubmit(f)">
+      <div class="form-group">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required [(ngModel)]="contact.name" class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" [(ngModel)]="contact.email" class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone:</label>
+        <input type="text" id="phone" name="phone" [(ngModel)]="contact.phone" class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="imageUrl">Image URL:</label>
+        <input type="text" id="imageUrl" name="imageUrl" [(ngModel)]="contact.imageUrl" class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label>Group Contacts:</label>
+        <div cdkDropList (cdkDropListDropped)="onDrop($event)" class="well">
+          <div *ngFor="let contact of groupContacts; let i = index" cdkDrag class="panel panel-default p-1 m-1">
+            {{ contact.name }}
+            <button type="button" class="btn btn-danger btn-xs pull-right" (click)="onRemoveItem(i)">x</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" type="submit" [disabled]="f.invalid">Save</button>
+      <button class="btn btn-default" type="button" (click)="onCancel()">Cancel</button>
+    </form>
+  </div>
+</div>
