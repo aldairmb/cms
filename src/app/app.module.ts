@@ -22,6 +22,9 @@ import { MessageListComponent } from './messages/message-list/message-list.compo
 
 import { DropdownDirective } from './shared/dropdown.directive';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { ContactsFilterPipe } from './contacts-filter.pipe';
+
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [
@@ -38,13 +41,15 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
     MessageItemComponent,
     MessageEditComponent,
     MessageListComponent,
-    DropdownDirective
+    DropdownDirective,
+    ContactsFilterPipe
   ],
   imports: [
     BrowserModule,
     FormsModule,
     AppRoutingModule,
-    DragDropModule
+    DragDropModule,
+    HttpClientModule
   ],
   providers: [],
   bootstrap: [AppComponent]
