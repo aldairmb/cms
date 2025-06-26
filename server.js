@@ -9,7 +9,10 @@ var logger = require('morgan');
 // import the routing file to handle the default (index) route
 var index = require('./server/routes/app');
 
-// ... ADD CODE TO IMPORT YOUR ROUTING FILES HERE ... 
+// ... ADD CODE TO IMPORT YOUR ROUTING FILES HERE ...
+var documentRoutes = require('./server/routes/documents');
+var messageRoutes = require('./server/routes/messages');
+var contactRoutes = require('./server/routes/contacts');
 
 var app = express(); // create an instance of express
 
@@ -36,16 +39,18 @@ app.use((req, res, next) => {
   next();
 });
 
-// Create link to Angular build directory
+// Serve Angular app static files
 app.use(express.static(path.join(__dirname, 'dist/my-first-app/browser')));
 
-
-// Tell express to use the default route
+// Use routes
 app.use('/', index);
+app.use('/api/documents', documentRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/contacts', contactRoutes);
 
-// Redirect all other requests to the Angular index.html
+// Redirect all other requests to Angular index.html
 app.use((req, res, next) => {
-  res.sendFile(path.join(__dirname, 'dist/my-first-app/index.html'));
+  res.sendFile(path.join(__dirname, 'dist/my-first-app/browser/index.html'));
 });
 
 // Set port and create server
