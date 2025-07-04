@@ -11,55 +11,45 @@ export class ContactService {
   contacts: Contact[] = [];
   contactListChangedEvent = new Subject<Contact[]>();
   maxContactId: number;
-  private firebaseUrl = 'https://aldair-wdd430-default-rtdb.firebaseio.com/';
 
   constructor(private http: HttpClient) {
     this.getContacts();
   }
 
-  getContacts(): void {
-    this.http.get<Contact[]>(this.firebaseUrl + 'contacts.json').subscribe(
-      (contacts: Contact[]) => {
-        this.contacts = contacts ?? [];
-        this.maxContactId = this.getMaxId();
-        this.contacts.sort((a, b) => a.name.localeCompare(b.name));
-        this.contactListChangedEvent.next(this.contacts.slice());
-      },
-      (error: any) => {
-        console.error('Error fetching contacts from Firebase:', error);
-      }
-    );
-  }
-
-  storeContacts() {
-    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    this.http.put(this.firebaseUrl + 'contacts.json', this.contacts, { headers }).subscribe(() => {
-      this.contactListChangedEvent.next(this.contacts.slice());
-    });
+  getContacts() {
+    this.http.get<{ message: string; contacts: Contact[] }>('http://localhost:3000/contacts')
+      .subscribe(
+        (responseData) => {
+          this.contacts = responseData.contacts;
+          this.contactListChangedEvent.next(this.contacts.slice());
+        },
+        (error) => {
+          console.error('Failed to fetch contacts:', error);
+        }
+      );
   }
 
   getContact(id: string): Contact {
-    return this.contacts.find(contact => contact.id === id) || null;
+    return this.contacts.find(c => c.id === id);
   }
 
-  getMaxId(): number {
-    let maxId = 0;
-    for (let contact of this.contacts) {
-      const currentId = parseInt(contact.id);
-      if (currentId > maxId) {
-        maxId = currentId;
-      }
-    }
-    return maxId;
-  }
+  addContact(contact: Contact) {
+    if (!contact) return;
 
-  addContact(newContact: Contact) {
-    if (!newContact) return;
+    contact.id = '';
 
-    this.maxContactId++;
-    newContact.id = this.maxContactId.toString();
-    this.contacts.push(newContact);
-    this.storeContacts();
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
+    this.http.post<{ message: string; contact: Contact }>('http://localhost:3000/contacts', contact, { headers })
+      .subscribe(
+        (responseData) => {
+          this.contacts.push(responseData.contact);
+          this.contactListChangedEvent.next(this.contacts.slice());
+        },
+        (error) => {
+          console.error('Failed to add contact:', error);
+        }
+      );
   }
 
   updateContact(originalContact: Contact, newContact: Contact) {
@@ -69,17 +59,37 @@ export class ContactService {
     if (pos < 0) return;
 
     newContact.id = originalContact.id;
-    this.contacts[pos] = newContact;
-    this.storeContacts();
+    newContact._id = originalContact._id;
+
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
+    this.http.put('http://localhost:3000/contacts/' + originalContact.id, newContact, { headers })
+      .subscribe(
+        (response: Response) => {
+          this.contacts[pos] = newContact;
+          this.contactListChangedEvent.next(this.contacts.slice());
+        },
+        (error) => {
+          console.error('Failed to update contact:', error);
+        }
+      );
   }
 
   deleteContact(contact: Contact) {
     if (!contact) return;
 
-    const pos = this.contacts.indexOf(contact);
+    const pos = this.contacts.findIndex(c => c.id === contact.id);
     if (pos < 0) return;
 
-    this.contacts.splice(pos, 1);
-    this.storeContacts();
+    this.http.delete('http://localhost:3000/contacts/' + contact.id)
+      .subscribe(
+        (response: Response) => {
+          this.contacts.splice(pos, 1);
+          this.contactListChangedEvent.next(this.contacts.slice());
+        },
+        (error) => {
+          console.error('Failed to delete contact:', error);
+        }
+      );
   }
 }

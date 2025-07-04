@@ -9,48 +9,85 @@ export class MessageService {
   messages: Message[] = [];
   messageChangedEvent = new EventEmitter<Message[]>();
   maxMessageId: number;
-  private firebaseUrl = 'https://aldair-wdd430-default-rtdb.firebaseio.com/';
 
   constructor(private http: HttpClient) {
     this.getMessages();
   }
 
   getMessages() {
-    this.http.get<Message[]>(this.firebaseUrl + 'messages.json').subscribe(
-      (messages: Message[]) => {
-        this.messages = messages ?? [];
-        this.maxMessageId = this.getMaxId();
-        this.messageChangedEvent.emit(this.messages.slice());
-      },
-      (error: any) => {
-        console.error('Error fetching messages from Firebase:', error);
-      }
-    );
+    this.http.get<{ message: string; messages: Message[] }>('http://localhost:3000/messages')
+      .subscribe(
+        (responseData) => {
+          this.messages = responseData.messages;
+          this.messageChangedEvent.emit(this.messages.slice());
+        },
+        (error) => {
+          console.error('Failed to fetch messages:', error);
+        }
+      );
   }
 
-  storeMessages() {
-    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    this.http.put(this.firebaseUrl + 'messages.json', this.messages, { headers }).subscribe(() => {
-      this.messageChangedEvent.emit(this.messages.slice());
-    });
+  getMessage(id: string): Message {
+    return this.messages.find((message) => message.id === id);
   }
 
-  getMaxId(): number {
-    let maxId = 0;
-    for (let message of this.messages) {
-      const currentId = parseInt(message.id);
-      if (currentId > maxId) {
-        maxId = currentId;
-      }
-    }
-    return maxId;
-  }
-
-  addMessage(message: Message): void {
+  addMessage(message: Message) {
     if (!message) return;
-    this.maxMessageId++;
-    message.id = this.maxMessageId.toString();
-    this.messages.push(message);
-    this.storeMessages();
+
+    message.id = '';
+
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
+    this.http.post<{ message: string; newMessage: Message }>('http://localhost:3000/messages', message, { headers })
+      .subscribe(
+        (responseData) => {
+          this.messages.push(responseData.newMessage);
+          this.messageChangedEvent.emit(this.messages.slice());
+        },
+        (error) => {
+          console.error('Failed to add message:', error);
+        }
+      );
+  }
+
+  updateMessage(originalMessage: Message, newMessage: Message) {
+    if (!originalMessage || !newMessage) return;
+
+    const pos = this.messages.findIndex(m => m.id === originalMessage.id);
+    if (pos < 0) return;
+
+    newMessage.id = originalMessage.id;
+    newMessage._id = originalMessage._id;
+
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
+    this.http.put('http://localhost:3000/messages/' + originalMessage.id, newMessage, { headers })
+      .subscribe(
+        (response: Response) => {
+          this.messages[pos] = newMessage;
+          this.messageChangedEvent.emit(this.messages.slice());
+        },
+        (error) => {
+          console.error('Failed to update message:', error);
+        }
+      );
+  }
+
+  deleteMessage(message: Message) {
+    if (!message) return;
+
+    const pos = this.messages.findIndex(m => m.id === message.id);
+    if (pos < 0) return;
+
+    this.http.delete('http://localhost:3000/messages/' + message.id)
+      .subscribe(
+        (response: Response) => {
+          this.messages.splice(pos, 1);
+          this.messageChangedEvent.emit(this.messages.slice());
+        },
+        (error) => {
+          console.error('Failed to delete message:', error);
+        }
+      );
   }
 }

@@ -55,7 +55,7 @@ app.use((req, res, next) => {
 });
 
 // establish a connection to the mongo database
-mongoose.connect('mongodb://localhost:27017/cms', {
+mongoose.connect('mongodb+srv://prod_user:chapopote@cluster0.qtl6x.mongodb.net/cms?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })

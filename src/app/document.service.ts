@@ -1,77 +1,109 @@
 import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
 import { Document } from './document.model';
+import { Subject } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class DocumentService {
   documents: Document[] = [];
-  documentListChangedEvent = new Subject<Document[]>();
   maxDocumentId: number;
-  private firebaseUrl = 'https://aldair-wdd430-default-rtdb.firebaseio.com/';
+  documentListChangedEvent = new Subject<Document[]>();
 
-  constructor(private http: HttpClient) {
-    this.getDocuments();
+  constructor(private http: HttpClient) {}
+
+  sortAndSend() {
+    this.documents.sort((a, b) => (a.name < b.name ? -1 : 1));
+    this.documentListChangedEvent.next(this.documents.slice());
   }
 
   getDocuments() {
-    this.http.get<Document[]>(this.firebaseUrl + 'documents.json').subscribe(
-      (documents: Document[]) => {
-        this.documents = documents ?? [];
-        this.maxDocumentId = this.getMaxId();
-        this.documents.sort((a, b) => a.name.localeCompare(b.name));
-        this.documentListChangedEvent.next(this.documents.slice());
-      },
-      (error: any) => {
-        console.error('Error fetching documents from Firebase:', error);
-      }
-    );
+    this.http.get<{ message: string; documents: Document[] }>('http://localhost:3000/documents')
+      .subscribe(
+        (responseData) => {
+          this.documents = responseData.documents;
+          this.sortAndSend();
+        },
+        (error) => {
+          console.error('Failed to fetch documents:', error);
+        }
+      );
   }
 
   getDocument(id: string): Document {
-    return this.documents.find(doc => doc.id === id) || null;
+    return this.documents.find((document) => document.id === id);
   }
 
-  getMaxId(): number {
-    let maxId = 0;
-    for (let document of this.documents) {
-      const currentId = parseInt(document.id);
-      if (currentId > maxId) {
-        maxId = currentId;
-      }
+  addDocument(document: Document) {
+    if (!document) {
+      return;
     }
-    return maxId;
-  }
 
-  storeDocuments() {
+    document.id = '';
+
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    this.http.put(this.firebaseUrl + 'documents.json', this.documents, { headers }).subscribe(() => {
-      this.documentListChangedEvent.next(this.documents.slice());
-    });
-  }
 
-  addDocument(newDocument: Document) {
-    if (!newDocument) return;
-    this.maxDocumentId++;
-    newDocument.id = this.maxDocumentId.toString();
-    this.documents.push(newDocument);
-    this.storeDocuments();
+    this.http.post<{ message: string; document: Document }>('http://localhost:3000/documents', document, { headers })
+      .subscribe(
+        (responseData) => {
+          this.documents.push(responseData.document);
+          this.sortAndSend();
+        },
+        (error) => {
+          console.error('Failed to add document:', error);
+        }
+      );
   }
 
   updateDocument(originalDocument: Document, newDocument: Document) {
-    if (!originalDocument || !newDocument) return;
+    if (!originalDocument || !newDocument) {
+      return;
+    }
+
     const pos = this.documents.findIndex(d => d.id === originalDocument.id);
-    if (pos < 0) return;
+
+    if (pos < 0) {
+      return;
+    }
+
     newDocument.id = originalDocument.id;
-    this.documents[pos] = newDocument;
-    this.storeDocuments();
+    newDocument._id = originalDocument._id;
+
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
+    this.http.put('http://localhost:3000/documents/' + originalDocument.id, newDocument, { headers })
+      .subscribe(
+        (response: Response) => {
+          this.documents[pos] = newDocument;
+          this.sortAndSend();
+        },
+        (error) => {
+          console.error('Failed to update document:', error);
+        }
+      );
   }
 
   deleteDocument(document: Document) {
-    if (!document) return;
-    const pos = this.documents.indexOf(document);
-    if (pos < 0) return;
-    this.documents.splice(pos, 1);
-    this.storeDocuments();
+    if (!document) {
+      return;
+    }
+
+    const pos = this.documents.findIndex(d => d.id === document.id);
+
+    if (pos < 0) {
+      return;
+    }
+
+    this.http.delete('http://localhost:3000/documents/' + document.id)
+      .subscribe(
+        (response: Response) => {
+          this.documents.splice(pos, 1);
+          this.sortAndSend();
+        },
+        (error) => {
+          console.error('Failed to delete document:', error);
+        }
+      );
   }
 }
